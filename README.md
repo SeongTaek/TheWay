@@ -2,8 +2,7 @@
 - 엔진 : Unreal Engine 4.26.2
 
 # 플레이 영상
-
-![image](https://user-images.githubusercontent.com/4263119/117795339-0e976a80-b289-11eb-9b03-7017a4705566.png)
+![Prototype](https://user-images.githubusercontent.com/4263119/117855610-99965600-b2c5-11eb-9419-6587aac691c2.jpg)
 
 # 캐릭터
 ### [ABaseCharacter](https://github.com/SeongTaek/TheWay/blob/main/TheWay/Private/Character/BaseCharacter.h)
