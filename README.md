@@ -130,4 +130,9 @@ void ABaseCharacter::OnDeath()
 ![image](https://user-images.githubusercontent.com/4263119/117833489-57fbb000-b2b1-11eb-8d86-17be1264202a.png)
 
 # UI
-* 
+* [UActionSlotsWidget](https://github.com/SeongTaek/TheWay/blob/main/TheWay/Private/UI/ActionSlotsWidget.h)
+* [USoulPointsLabelWidget](https://github.com/SeongTaek/TheWay/blob/main/TheWay/Private/UI/SoulPointsLabelWidget.h)
+* [UHealthBarWidget](https://github.com/SeongTaek/TheWay/blob/main/TheWay/Private/UI/InGameHUDWidget.h)
+> InGame
+![image](https://user-images.githubusercontent.com/4263119/117839515-42d55000-b2b6-11eb-8e8f-42ac76144e82.png)
+
