@@ -77,11 +77,23 @@ float ABaseCharacter::TakeDamage(float Damage, struct FDamageEvent const& Damage
 > 죽음 처리
 > 
 ``` c++
+void UCharacterStatComponent::TakeDamage(float Damage)
+{
+	CurrentHp = FMath::Clamp<float>(CurrentHp - Damage, 0.0f, MaxHp);
+
+	OnHPChanged.Broadcast(CurrentHp, MaxHp);
+	if (CurrentHp <= 0.0f)
+	{
+		OnHPIsZero.Broadcast();
+	}
+}
+
 void ABaseCharacter::PostInitializeComponents()
 {
 	...
 	CharacterStatComponent->OnHPIsZero.AddUObject(this, &ABaseCharacter::OnDeath);
 }
+
 void ABaseCharacter::OnDeath()
 {
 	...
@@ -136,3 +148,75 @@ void ABaseCharacter::OnDeath()
 > InGame
 ![image](https://user-images.githubusercontent.com/4263119/117839515-42d55000-b2b6-11eb-8e8f-42ac76144e82.png)
 
+# 데이터 관리
+* [UDataTableManager](https://github.com/SeongTaek/TheWay/blob/main/TheWay/Private/DataTable/DataTableManager.h)
+* [UDataTables](https://github.com/SeongTaek/TheWay/blob/main/TheWay/Private/DataTable/TheWayDataTable.h)
+
+> 템플릿 특수화로 데이터 타입 별로 키값 설정
+``` c++
+template<typename TRow>
+struct TRowKeyField
+{
+	template<typename TRow, typename TEnableIf<TIsPointer<TRow>::Value, bool>::Type = true>
+	static auto Get(const TRow& InRow) -> decltype(InRow->Id)
+	{
+		return InRow->Id;
+	}
+
+	template<typename TRow, typename TEnableIf<TNot<TIsPointer<TRow>>::Value, bool>::Type = true>
+	static auto Get(const TRow& InRow) -> decltype(InRow.Id)
+	{
+		return InRow.Id;
+	}
+};
+// FWeaponStatsData는 Id, Level로 키값 사용
+template<>
+struct TRowKeyField<FWeaponStatsData>
+{
+	static TPair<int32, int32> Get(const FWeaponStatsData& InRow)
+	{
+		return TPair<int32, int32>(InRow.Id, InRow.Level);
+	}
+
+	static TPair<int32, int32> Get(const FWeaponStatsData* InRow)
+	{
+		return TPair<int32, int32>(InRow->Id, InRow->Level);
+	}
+};
+```
+> 데이터 저장, 가져오기, 사용하기
+``` c++
+template<typename TRow>
+void UDataTableManager::AddDataTable(const TArray<TRow>& InArray)
+{
+	typedef typename TRowKeyType<TRemovePointer<TRow>::Type>::type TRowKey;
+	TSharedRef<FDataTable<TRemovePointer<TRow>::Type>> NewTable = MakeShared<FDataTable<TRemovePointer<TRow>::Type>>();
+
+	for (const TRow& TableRow : InArray)
+	{
+		if constexpr (TIsPointer<TRow>::Value)
+		{
+			NewTable->RowMap.Add(TRowKeyField<TRemovePointer<TRow>::Type>::Get(TableRow), MakeShareable(new TRemovePointer<TRow>::Type(*TableRow)));
+		}
+		else
+		{
+			NewTable->RowMap.Add(TRowKeyField<TRemovePointer<TRow>::Type>::Get(TableRow), MakeShareable(new TRow(TableRow)));
+		}
+	}
+
+	WholeDataTables.Add(TRemovePointer<TRow>::Type::StaticStruct(), StaticCastSharedRef<FDataTableBase>(NewTable));
+}
+
+template<typename TRow>
+const TSharedPtr<const TRow> UDataTableManager::GetTableCsv(const typename TRowKeyType<TRow>::type& Id) const
+{
+	typedef typename TRowKeyType<TRow>::type TRowKey;
+	const TMap<TRowKey, TSharedPtr<TRow>>& DataTable = GetDataTable<TRow>();
+	const TSharedPtr<TRow>* FoundRow = DataTable.Find(Id);
+
+	return FoundRow ? *FoundRow : nullptr;
+}
+
+auto WeaponStatsData = UDataTableManager::Get(this)->GetTableCsv<FWeaponStatsData>(TPair<int32, int32>(Id, Level));
+
+```
